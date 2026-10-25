@@ -207,8 +207,14 @@ export async function handleSwapConfirm(ctx) {
     const router = getRouterContract(signer);
 
     const amountIn = parseTokenAmount(swapSession.amount, swapSession.fromToken.decimals);
+
+    // Calculate amountOutMin with 2% slippage, ensuring decimal precision matches token decimals
+    const rawAmountOut = parseFloat(swapSession.amountOut) * 0.98;
+    const maxDecimals = swapSession.toToken.decimals;
+    const amountOutWithSlippage = parseFloat(rawAmountOut.toFixed(maxDecimals));
+
     const amountOutMin = parseTokenAmount(
-      parseFloat(swapSession.amountOut) * 0.98, // 2% slippage
+      amountOutWithSlippage,
       swapSession.toToken.decimals
     );
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
