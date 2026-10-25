@@ -26,6 +26,12 @@
 - **Donate tPOT back to faucet** to support the ecosystem
 - No need to visit website for test tokens
 
+### 🗺️ Address Mapper
+- **Convert any EVM address to Portal (SS58) format**
+- Educational tool explaining how address encoding works
+- See technical breakdown of the conversion process
+- Useful for testnet faucets and cross-format compatibility
+
 ### 📊 Portfolio Tracking
 - View all token balances in real-time
 - Transaction history
@@ -39,6 +45,8 @@ The bot creates **two addresses** from one private key:
 - **SS58 Address (5...)** — For receiving native tPOT from testnet faucets and transfers
 
 Both addresses are cryptographically derived from your single private key and **share the same balance**. This is a Substrate EVM feature, not two separate wallets.
+
+**New Feature:** Use the **🗺️ Address Mapper** to convert ANY EVM address (including contracts) to Portal format! The bot explains the encoding process step-by-step. See [ADDRESS_MAPPING.md](./ADDRESS_MAPPING.md) for technical details.
 
 ## Environment Variables
 

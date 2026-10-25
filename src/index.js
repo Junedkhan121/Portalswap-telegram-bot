@@ -42,6 +42,11 @@ import {
   isInTransferFlow
 } from './handlers/transfer.js';
 import { setupFaucetHandlers } from './handlers/faucet.js';
+import {
+  handleMappingStart,
+  handleMappingAddressInput,
+  isInMappingFlow
+} from './handlers/mapping.js';
 
 // Initialize bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -167,6 +172,11 @@ bot.action('transfer', handleTransferStart);
 bot.action('confirm_transfer', handleTransferConfirm);
 
 /**
+ * Address Mapping
+ */
+bot.action('address_mapping', handleMappingStart);
+
+/**
  * Show Keys
  */
 bot.action('show_keys', async (ctx) => {
@@ -236,10 +246,12 @@ bot.action('help', async (ctx) => {
     `<b>Features:</b>\n` +
     `• Swap tokens on Portaldot V3 testnet\n` +
     `• Stake tPOT for rewards\n` +
+    `• Map any EVM address to Portal format\n` +
     `• Check balances and portfolio\n\n` +
     `<b>Addresses:</b>\n` +
     `• EVM (0x...): For contract interactions\n` +
-    `• SS58 (5...): For receiving testnet gas\n\n` +
+    `• SS58 (5...): For receiving testnet gas\n` +
+    `• Use Address Mapper to convert between formats!\n\n` +
     `<b>Security:</b>\n` +
     `• Your keys are stored in-session only\n` +
     `• Always verify transaction details\n` +
@@ -288,6 +300,12 @@ bot.on('text', async (ctx) => {
 
     // Step 2: Waiting for amount
     await handleTransferAmountInput(ctx);
+    return;
+  }
+
+  // Check if user is in address mapping flow
+  if (isInMappingFlow(userId)) {
+    await handleMappingAddressInput(ctx, text);
     return;
   }
 

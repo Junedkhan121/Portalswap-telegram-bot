@@ -33,11 +33,12 @@ export const getMainMenu = () => {
       Markup.button.callback('🚰 Faucet', 'faucet')
     ],
     [
-      Markup.button.callback('📊 Portfolio', 'portfolio'),
-      Markup.button.callback('ℹ️ Help', 'help')
+      Markup.button.callback('🗺️ Address Mapper', 'address_mapping'),
+      Markup.button.callback('📊 Portfolio', 'portfolio')
     ],
     [
-      Markup.button.callback('🔑 Show Keys', 'show_keys')
+      Markup.button.callback('🔑 Show Keys', 'show_keys'),
+      Markup.button.callback('ℹ️ Help', 'help')
     ]
   ]);
 };
