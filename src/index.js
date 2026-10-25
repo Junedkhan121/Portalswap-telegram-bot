@@ -33,6 +33,13 @@ import {
   handleStakeClaimRewards,
   isInStakingFlow
 } from './handlers/staking.js';
+import {
+  handleTransferStart,
+  handleTransferAddressInput,
+  handleTransferAmountInput,
+  handleTransferConfirm,
+  isInTransferFlow
+} from './handlers/transfer.js';
 
 // Initialize bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -144,6 +151,12 @@ bot.action('stake_withdraw', handleStakeWithdraw);
 bot.action('stake_claim', handleStakeClaimRewards);
 bot.action('confirm_stake_deposit', handleStakeDepositConfirm);
 bot.action('confirm_stake_withdraw', handleStakeWithdrawConfirm);
+
+/**
+ * Transfer Flow
+ */
+bot.action('transfer', handleTransferStart);
+bot.action('confirm_transfer', handleTransferConfirm);
 
 /**
  * Show Keys
@@ -280,6 +293,21 @@ bot.on('text', async (ctx) => {
     } else {
       await ctx.reply(`❌ ${result.error}\n\nPlease try again.`);
     }
+    return;
+  }
+
+  // Check if user is in transfer flow
+  if (isInTransferFlow(userId)) {
+    const transferFlow = isInTransferFlow(userId);
+
+    // Step 1: Waiting for recipient address
+    if (text.startsWith('5')) {
+      await handleTransferAddressInput(ctx, text);
+      return;
+    }
+
+    // Step 2: Waiting for amount
+    await handleTransferAmountInput(ctx);
     return;
   }
 

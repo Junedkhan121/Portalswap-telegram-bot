@@ -29,11 +29,14 @@ export const getMainMenu = () => {
       Markup.button.callback('⚡ Stake tPOT', 'stake')
     ],
     [
-      Markup.button.callback('📊 Portfolio', 'portfolio'),
+      Markup.button.callback('💸 Send tPOT', 'transfer'),
       Markup.button.callback('🚰 Faucet', 'faucet')
     ],
     [
-      Markup.button.callback('ℹ️ Help', 'help'),
+      Markup.button.callback('📊 Portfolio', 'portfolio'),
+      Markup.button.callback('ℹ️ Help', 'help')
+    ],
+    [
       Markup.button.callback('🔑 Show Keys', 'show_keys')
     ]
   ]);

@@ -43,12 +43,14 @@ export function evmToSS58(evmAddress) {
  * @returns {object} Both address formats
  */
 export function getAddressInfo(evmAddress) {
+  const ss58 = evmToSS58(evmAddress);
   return {
     evm: evmAddress,
-    ss58: evmToSS58(evmAddress),
+    ss58: ss58,
+    ss58Address: ss58, // Alias for compatibility
     displayText: `🔑 Your Addresses:\n\n` +
       `EVM Address (for contracts):\n<code>${evmAddress}</code>\n\n` +
-      `SS58 Address (for gas transfers):\n<code>${evmToSS58(evmAddress)}</code>\n\n` +
+      `SS58 Address (for gas transfers):\n<code>${ss58}</code>\n\n` +
       `⚠️ To receive testnet gas (tPOTv3), share your SS58 address (5...).`
   };
 }
