@@ -54,8 +54,67 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 // Initialize provider
 const provider = new ethers.JsonRpcProvider(process.env.PORTALDOT_EVM_RPC);
 
+// Middleware: Check if wallet exists before allowing actions
+const requireWallet = async (ctx, next) => {
+  const userId = ctx.from.id;
+
+  if (!hasActiveSession(userId)) {
+    await ctx.answerCbQuery('⚠️ Please create or import a wallet first!', { show_alert: true });
+
+    // Try to edit message if possible, otherwise send new message
+    try {
+      await ctx.editMessageText(
+        '🔐 <b>Wallet Required</b>\n\n' +
+        'You need to create or import a wallet before using this feature.\n\n' +
+        'Choose an option below to get started:',
+        {
+          parse_mode: 'HTML',
+          ...getInitialMenu()
+        }
+      );
+    } catch (err) {
+      // If edit fails, send new message
+      await ctx.reply(
+        '🔐 <b>Wallet Required</b>\n\n' +
+        'You need to create or import a wallet before using this feature.\n\n' +
+        'Choose an option below to get started:',
+        {
+          parse_mode: 'HTML',
+          ...getInitialMenu()
+        }
+      );
+    }
+    return; // Stop execution
+  }
+
+  // Wallet exists, proceed
+  return next();
+};
+
 // Setup faucet handlers (includes claim tokens & donate)
-setupFaucetHandlers(bot, provider, (userId) => getWalletSession(userId));
+setupFaucetHandlers(bot, provider, (userId) => getWalletSession(userId), requireWallet);
+
+// Middleware: Check if wallet exists before allowing actions
+const requireWallet = async (ctx, next) => {
+  const userId = ctx.from.id;
+
+  if (!hasActiveSession(userId)) {
+    await ctx.answerCbQuery('⚠️ Please create or import a wallet first!', { show_alert: true });
+    await ctx.editMessageText(
+      '🔐 <b>Wallet Required</b>\n\n' +
+      'You need to create or import a wallet before using this feature.\n\n' +
+      'Choose an option below to get started:',
+      {
+        parse_mode: 'HTML',
+        ...getInitialMenu()
+      }
+    );
+    return; // Stop execution
+  }
+
+  // Wallet exists, proceed
+  return next();
+};
 
 // Error handling
 bot.catch((err, ctx) => {
@@ -143,49 +202,45 @@ bot.action('main_menu', async (ctx) => {
 });
 
 /**
- * Balance Check
+ * Balance Check - PROTECTED
  */
-bot.action('balance', handleBalance);
+bot.action('balance', requireWallet, handleBalance);
 
 /**
- * Swap Flow
+ * Swap Flow - PROTECTED
  */
-bot.action('swap', handleSwapStart);
-bot.action(/^token_(from|to)_/, handleTokenSelection);
-bot.action('confirm_swap', handleSwapConfirm);
+bot.action('swap', requireWallet, handleSwapStart);
+bot.action(/^token_(from|to)_/, requireWallet, handleTokenSelection);
+bot.action('confirm_swap', requireWallet, handleSwapConfirm);
 
 /**
- * Staking Flow
+ * Staking Flow - PROTECTED
  */
-bot.action('stake', handleStakeMenu);
-bot.action('stake_info', handleStakeInfo);
-bot.action('stake_deposit', handleStakeDeposit);
-bot.action('stake_withdraw', handleStakeWithdraw);
-bot.action('stake_claim', handleStakeClaimRewards);
-bot.action('confirm_stake_deposit', handleStakeDepositConfirm);
-bot.action('confirm_stake_withdraw', handleStakeWithdrawConfirm);
+bot.action('stake', requireWallet, handleStakeMenu);
+bot.action('stake_info', requireWallet, handleStakeInfo);
+bot.action('stake_deposit', requireWallet, handleStakeDeposit);
+bot.action('stake_withdraw', requireWallet, handleStakeWithdraw);
+bot.action('stake_claim', requireWallet, handleStakeClaimRewards);
+bot.action('confirm_stake_deposit', requireWallet, handleStakeDepositConfirm);
+bot.action('confirm_stake_withdraw', requireWallet, handleStakeWithdrawConfirm);
 
 /**
- * Transfer Flow
+ * Transfer Flow - PROTECTED
  */
-bot.action('transfer', handleTransferStart);
-bot.action('confirm_transfer', handleTransferConfirm);
+bot.action('transfer', requireWallet, handleTransferStart);
+bot.action('confirm_transfer', requireWallet, handleTransferConfirm);
 
 /**
- * Address Mapping
+ * Address Mapping - PUBLIC (can map any address without wallet)
  */
 bot.action('address_mapping', handleMappingStart);
 
 /**
- * Show Keys
+ * Show Keys - PROTECTED
  */
-bot.action('show_keys', async (ctx) => {
+bot.action('show_keys', requireWallet, async (ctx) => {
   const userId = ctx.from.id;
   const session = getWalletSession(userId);
-
-  if (!session) {
-    return ctx.reply('⚠️ No wallet found.', getBackButton());
-  }
 
   await ctx.answerCbQuery();
 
@@ -203,17 +258,13 @@ bot.action('show_keys', async (ctx) => {
 });
 
 /**
- * Portfolio
+ * Portfolio - PROTECTED
  */
-bot.action('portfolio', async (ctx) => {
+bot.action('portfolio', requireWallet, async (ctx) => {
   await ctx.answerCbQuery();
 
   const userId = ctx.from.id;
   const session = getWalletSession(userId);
-
-  if (!session) {
-    return ctx.reply('⚠️ No wallet found.', getBackButton());
-  }
 
   await ctx.editMessageText(
     `📊 <b>Portfolio</b>\n\n` +

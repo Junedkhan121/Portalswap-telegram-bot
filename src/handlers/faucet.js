@@ -44,17 +44,14 @@ const TEST_TOKENS = {
 // Store user states
 const userStates = new Map();
 
-export function setupFaucetHandlers(bot, provider, getWallet) {
+export function setupFaucetHandlers(bot, provider, getWallet, requireWallet) {
 
-  // Faucet menu action
-  bot.action('faucet', async (ctx) => {
+  // Faucet menu action - PROTECTED
+  bot.action('faucet', requireWallet, async (ctx) => {
     try {
       await ctx.answerCbQuery();
 
       const wallet = getWallet(ctx.from.id);
-      if (!wallet) {
-        return ctx.reply('⚠️ No wallet found. Send /start to create one first.');
-      }
 
       const addressInfo = await getAddressInfo(wallet.address);
 
@@ -84,15 +81,12 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
     }
   });
 
-  // Claim test tokens menu
-  bot.action('claim_tokens', async (ctx) => {
+  // Claim test tokens menu - PROTECTED
+  bot.action('claim_tokens', requireWallet, async (ctx) => {
     try {
       await ctx.answerCbQuery();
 
       const wallet = getWallet(ctx.from.id);
-      if (!wallet) {
-        return ctx.reply('⚠️ No wallet found. Send /start to create one first.');
-      }
 
       await ctx.reply(
         '🪙 *Claim Test Tokens*\n\n' +
@@ -125,16 +119,13 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
     }
   });
 
-  // Handle token minting
+  // Handle token minting - PROTECTED
   Object.keys(TEST_TOKENS).forEach(symbol => {
-    bot.action(`mint_${symbol}`, async (ctx) => {
+    bot.action(`mint_${symbol}`, requireWallet, async (ctx) => {
       try {
         await ctx.answerCbQuery();
 
         const wallet = getWallet(ctx.from.id);
-        if (!wallet) {
-          return ctx.reply('⚠️ No wallet found. Send /start to create one first.');
-        }
 
         const token = TEST_TOKENS[symbol];
         const statusMsg = await ctx.reply(`⏳ Minting ${token.amount} ${symbol}...`);
@@ -216,15 +207,12 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
     });
   });
 
-  // Donate to faucet action
-  bot.action('donate_faucet', async (ctx) => {
+  // Donate to faucet action - PROTECTED
+  bot.action('donate_faucet', requireWallet, async (ctx) => {
     try {
       await ctx.answerCbQuery();
 
       const wallet = getWallet(ctx.from.id);
-      if (!wallet) {
-        return ctx.reply('⚠️ No wallet found. Send /start to create one first.');
-      }
 
       userStates.set(ctx.from.id, { action: 'donate_faucet' });
 
