@@ -1,27 +1,5 @@
 import { ethers } from 'ethers';
 
-// Raw RPC helper (no ethers provider interference)
-async function rpcCall(provider, method, params) {
-  const payload = {
-    jsonrpc: '2.0',
-    id: Date.now(),
-    method,
-    params
-  };
-
-  const response = await fetch(provider._getConnection().url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  const json = await response.json();
-  if (json.error) {
-    throw new Error(json.error.message || JSON.stringify(json.error));
-  }
-  return json.result;
-}
-
 // ERC20 faucet ABI (mint function)
 const ERC20_FAUCET_ABI = [
   'function faucet(address recipient, uint256 amount) external',
@@ -181,38 +159,15 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
             );
           }
 
-          // Connect wallet (no provider - signing only, like frontend relay)
-          const signerWallet = new ethers.Wallet(wallet.privateKey);
+          // Connect wallet with provider (EXACTLY like website does)
+          const connectedWallet = new ethers.Wallet(wallet.privateKey, provider);
 
-          // Explicitly fetch nonce via raw RPC
-          const nonceHex = await rpcCall(provider, 'eth_getTransactionCount', [wallet.address, 'latest']);
-          const nonce = parseInt(nonceHex, 16);
+          // Create contract instance with signer (EXACTLY like website)
+          const tokenContract = new ethers.Contract(token.address, ERC20_FAUCET_ABI, connectedWallet);
 
-          // Encode the contract call data
-          const iface = new ethers.Interface(ERC20_FAUCET_ABI);
+          // Call faucet method directly (EXACTLY like website does at line 36-39)
           const amount = ethers.parseUnits(token.amount, token.decimals);
-          const data = iface.encodeFunctionData('faucet', [wallet.address, amount]);
-
-          // Manually construct raw LEGACY transaction (exactly like frontend relay)
-          const rawTx = {
-            to: token.address,
-            data: data,
-            value: 0n,
-            gasPrice: 100000n,
-            gasLimit: 120000n,
-            type: 0,
-            nonce,
-            chainId: 420420777,
-          };
-
-          // Sign the transaction
-          const signedTx = await signerWallet.signTransaction(rawTx);
-
-          // Broadcast via raw RPC (bypassing ethers provider completely)
-          const txHash = await rpcCall(provider, 'eth_sendRawTransaction', [signedTx]);
-
-          // Create a minimal tx object for the UI
-          const tx = { hash: txHash };
+          const tx = await tokenContract.faucet(wallet.address, amount);
 
           await ctx.telegram.editMessageText(
             ctx.chat.id,
@@ -222,20 +177,8 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
             { parse_mode: 'Markdown' }
           );
 
-          // Wait for confirmation via raw RPC polling
-          let receipt = null;
-          for (let i = 0; i < 30; i++) {
-            const receiptHex = await rpcCall(provider, 'eth_getTransactionReceipt', [tx.hash]);
-            if (receiptHex) {
-              receipt = receiptHex;
-              break;
-            }
-            await new Promise(resolve => setTimeout(resolve, 2000)); // wait 2s
-          }
-
-          if (!receipt) {
-            throw new Error('Transaction timed out');
-          }
+          // Wait for confirmation (EXACTLY like website)
+          await tx.wait();
 
           await ctx.telegram.editMessageText(
             ctx.chat.id,
