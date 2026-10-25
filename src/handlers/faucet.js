@@ -159,30 +159,35 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
             );
           }
 
-          // Connect wallet with provider
-          const connectedWallet = new ethers.Wallet(wallet.privateKey, provider);
+          // Connect wallet (no provider - signing only, like frontend relay)
+          const signerWallet = new ethers.Wallet(wallet.privateKey);
 
-          // Explicitly fetch nonce (critical for Portaldot)
+          // Explicitly fetch nonce
           const nonce = await provider.getTransactionCount(wallet.address, 'latest');
 
-          // Create contract instance
-          const tokenContract = new ethers.Contract(
-            token.address,
-            ERC20_FAUCET_ABI,
-            connectedWallet
-          );
-
-          // Parse amount with correct decimals
+          // Encode the contract call data
+          const iface = new ethers.Interface(ERC20_FAUCET_ABI);
           const amount = ethers.parseUnits(token.amount, token.decimals);
+          const data = iface.encodeFunctionData('faucet', [wallet.address, amount]);
 
-          // Use LEGACY transaction format (type 0) - Portaldot requires this
-          const tx = await tokenContract.faucet(wallet.address, amount, {
-            type: 0,
+          // Manually construct raw LEGACY transaction (exactly like frontend relay)
+          const rawTx = {
+            to: token.address,
+            data: data,
+            value: 0n,
             gasPrice: 100000n,
             gasLimit: 120000n,
+            type: 0,
             nonce,
-            chainId: 420420777
-          });
+            chainId: 420420777,
+          };
+
+          // Sign the transaction
+          const signedTx = await signerWallet.signTransaction(rawTx);
+
+          // Broadcast manually via provider
+          const txResponse = await provider.broadcastTransaction(signedTx);
+          const tx = txResponse;
 
           await ctx.telegram.editMessageText(
             ctx.chat.id,
