@@ -51,8 +51,21 @@ import {
 // Initialize bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Initialize provider
-const provider = new ethers.JsonRpcProvider(process.env.PORTALDOT_EVM_RPC);
+// Initialize provider with increased timeout and retry logic
+const provider = new ethers.JsonRpcProvider(
+  process.env.PORTALDOT_EVM_RPC,
+  undefined,
+  {
+    staticNetwork: ethers.Network.from({
+      chainId: parseInt(process.env.PORTALDOT_CHAIN_ID),
+      name: 'portaldot-v3-testnet'
+    }),
+    batchMaxCount: 1, // Disable batching to avoid timeout issues
+  }
+);
+
+// Set custom timeout for provider requests (30 seconds)
+provider.pollingInterval = 15000;
 
 // Middleware: Check if wallet exists before allowing actions
 const requireWallet = async (ctx, next) => {

@@ -60,6 +60,32 @@ export async function handleBalance(ctx) {
 
   } catch (error) {
     console.error('Balance fetch error:', error);
-    await ctx.reply('❌ Failed to fetch balances. Please try again.', getBackButton());
+
+    let errorMessage = '❌ Failed to fetch balances.\n\n';
+
+    if (error.code === 'TIMEOUT' || error.message?.includes('timeout')) {
+      errorMessage += '⏱️ <b>RPC Timeout</b>\n\n' +
+        'The Portaldot testnet RPC is not responding. This could be:\n' +
+        '• Temporary network congestion\n' +
+        '• RPC node maintenance\n' +
+        '• High traffic on testnet\n\n' +
+        '💡 <b>Try:</b>\n' +
+        '1. Wait a few minutes and try again\n' +
+        '2. Check if portalswap.live is working\n' +
+        '3. Use the web app if bot is slow\n\n' +
+        '🔗 <a href="https://portalswap.live">portalswap.live</a>';
+    } else if (error.code === 'NETWORK_ERROR') {
+      errorMessage += '🌐 <b>Network Error</b>\n\n' +
+        'Cannot connect to Portaldot testnet.\n' +
+        'Please try again in a few moments.';
+    } else {
+      errorMessage += 'Please try again later.';
+    }
+
+    await ctx.reply(errorMessage, {
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      ...getBackButton()
+    });
   }
 }
