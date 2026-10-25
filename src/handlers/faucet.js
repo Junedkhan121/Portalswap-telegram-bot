@@ -153,8 +153,14 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
           // Parse amount with correct decimals
           const amount = ethers.parseUnits(token.amount, token.decimals);
 
-          // Call faucet function
-          const tx = await tokenContract.faucet(wallet.address, amount);
+          // Estimate gas first
+          const gasEstimate = await tokenContract.faucet.estimateGas(wallet.address, amount);
+          const gasLimit = gasEstimate * 120n / 100n; // Add 20% buffer
+
+          // Call faucet function with explicit gas limit
+          const tx = await tokenContract.faucet(wallet.address, amount, {
+            gasLimit: gasLimit,
+          });
 
           await ctx.telegram.editMessageText(
             ctx.chat.id,
@@ -270,9 +276,16 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
         connectedWallet
       );
 
-      // Send donation
+      const value = ethers.parseEther(amount);
+
+      // Estimate gas first
+      const gasEstimate = await faucetContract.donate.estimateGas({ value });
+      const gasLimit = gasEstimate * 120n / 100n; // Add 20% buffer
+
+      // Send donation with explicit gas limit
       const tx = await faucetContract.donate({
-        value: ethers.parseEther(amount),
+        value: value,
+        gasLimit: gasLimit,
       });
 
       await ctx.telegram.editMessageText(
