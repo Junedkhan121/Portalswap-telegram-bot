@@ -169,6 +169,7 @@ export async function handleSwapAmountInput(ctx) {
       `You pay: ${amount} ${swapSession.fromToken.symbol}\n` +
       `You receive (est.): ${parseFloat(formattedOut).toFixed(6)} ${swapSession.toToken.symbol}\n\n` +
       `Fee: 0.3%\n` +
+      `Slippage Tolerance: 5%\n` +
       `Price Impact: ~${priceImpact}%\n\n` +
       `⚠️ This will execute on Portaldot V3 Testnet.`;
 
@@ -208,8 +209,8 @@ export async function handleSwapConfirm(ctx) {
 
     const amountIn = parseTokenAmount(swapSession.amount, swapSession.fromToken.decimals);
 
-    // Calculate amountOutMin with 2% slippage, ensuring decimal precision matches token decimals
-    const rawAmountOut = parseFloat(swapSession.amountOut) * 0.98;
+    // Calculate amountOutMin with 5% slippage tolerance (testnet has low liquidity)
+    const rawAmountOut = parseFloat(swapSession.amountOut) * 0.95;
     const maxDecimals = swapSession.toToken.decimals;
     const amountOutWithSlippage = parseFloat(rawAmountOut.toFixed(maxDecimals));
 
@@ -277,10 +278,33 @@ export async function handleSwapConfirm(ctx) {
 
   } catch (error) {
     console.error('Swap execution error:', error);
+
+    let errorMsg = '❌ <b>Swap Failed</b>\n\n';
+
+    if (error.message.includes('insufficient funds')) {
+      errorMsg += 'Error: Insufficient balance for this swap.\n\n';
+    } else if (error.message.includes('INSUFFICIENT_OUTPUT_AMOUNT') || error.message.includes('require(false)')) {
+      errorMsg += 'Error: Insufficient liquidity or slippage too low.\n\n' +
+        'Try:\n' +
+        '• Reducing swap amount\n' +
+        '• Waiting for more liquidity\n' +
+        '• Swapping a different pair';
+    } else if (error.message.includes('INSUFFICIENT_INPUT_AMOUNT')) {
+      errorMsg += 'Error: Swap amount too small.\n\nTry increasing the amount.';
+    } else if (error.message.includes('execution reverted')) {
+      errorMsg += 'Error: Transaction reverted by contract.\n\n' +
+        'This usually means:\n' +
+        '• Low liquidity in pool\n' +
+        '• Price moved unfavorably\n' +
+        '• Invalid swap path';
+    } else {
+      errorMsg += `Error: ${error.message || 'Unknown error'}`;
+    }
+
+    errorMsg += '\n\nPlease check your balance and try again.';
+
     await ctx.editMessageText(
-      `❌ <b>Swap Failed</b>\n\n` +
-      `Error: ${error.message || 'Unknown error'}\n\n` +
-      `Please check your balance and try again.`,
+      errorMsg,
       {
         parse_mode: 'HTML',
         ...getBackButton()
