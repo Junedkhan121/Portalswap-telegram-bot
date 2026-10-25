@@ -178,14 +178,14 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
           );
 
           // Wait for confirmation (EXACTLY like website)
-          await tx.wait();
+          const receipt = await tx.wait();
 
           await ctx.telegram.editMessageText(
             ctx.chat.id,
             statusMsg.message_id,
             null,
             `✅ *Minted ${token.amount} ${symbol}!*\n\n` +
-            `Tx: \`${receipt.hash}\`\n` +
+            `Tx: \`${tx.hash}\`\n` +
             `Block: ${receipt.blockNumber}`,
             { parse_mode: 'Markdown' }
           );
