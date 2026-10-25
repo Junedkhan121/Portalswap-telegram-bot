@@ -88,9 +88,8 @@ export const getStakingMenu = () => {
       Markup.button.callback('➖ Unstake', 'stake_withdraw')
     ],
     [
-      Markup.button.callback('🎁 Claim Rewards', 'stake_claim'),
       Markup.button.callback('📊 My Stake', 'stake_info')
     ],
-    [Markup.button.callback('« Back', 'main_menu')]
+    [Markup.button.callback('« Back to Menu', 'main_menu')]
   ]);
 };

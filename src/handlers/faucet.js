@@ -74,7 +74,7 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
           inline_keyboard: [
             [{ text: '🪙 Claim Test Tokens', callback_data: 'claim_tokens' }],
             [{ text: '💧 Donate tPOT to Faucet', callback_data: 'donate_faucet' }],
-            [{ text: '« Back', callback_data: 'back_main' }],
+            [{ text: '« Back to Menu', callback_data: 'main_menu' }],
           ],
         },
       });
