@@ -4,6 +4,7 @@
  */
 
 import { Telegraf } from 'telegraf';
+import { ethers } from 'ethers';
 import 'dotenv/config';
 
 // Utils
@@ -40,9 +41,16 @@ import {
   handleTransferConfirm,
   isInTransferFlow
 } from './handlers/transfer.js';
+import { setupFaucetHandlers } from './handlers/faucet.js';
 
 // Initialize bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
+
+// Initialize provider
+const provider = new ethers.JsonRpcProvider(process.env.PORTALDOT_EVM_RPC);
+
+// Setup faucet handlers (includes claim tokens & donate)
+setupFaucetHandlers(bot, provider, (userId) => getWalletSession(userId));
 
 // Error handling
 bot.catch((err, ctx) => {
@@ -214,36 +222,8 @@ bot.action('portfolio', async (ctx) => {
 
 /**
  * Faucet
+ * Handler imported from handlers/faucet.js (includes claim tokens & donate features)
  */
-bot.action('faucet', async (ctx) => {
-  await ctx.answerCbQuery();
-
-  const userId = ctx.from.id;
-  const session = getWalletSession(userId);
-
-  if (!session) {
-    return ctx.reply('⚠️ No wallet found.', getBackButton());
-  }
-
-  const addressInfo = getAddressInfo(session.address);
-
-  await ctx.editMessageText(
-    `🚰 <b>Testnet Faucet</b>\n\n` +
-    `<b>Get Free Testnet Tokens:</b>\n\n` +
-    `1️⃣ <b>Native tPOT</b> (for gas):\n` +
-    `   Send tPOT to your SS58 address:\n` +
-    `   <code>${addressInfo.ss58Address}</code>\n\n` +
-    `2️⃣ <b>Test Tokens</b> (pUSDT, pDAI, pWBTC, pLINK):\n` +
-    `   Visit: <a href="https://portalswap.live">portalswap.live</a>\n` +
-    `   Connect wallet and use the Faucet tab\n\n` +
-    `💡 <i>Tip: You need tPOT first to pay for minting test tokens!</i>`,
-    {
-      parse_mode: 'HTML',
-      disable_web_page_preview: true,
-      ...getBackButton()
-    }
-  );
-});
 
 /**
  * Help
