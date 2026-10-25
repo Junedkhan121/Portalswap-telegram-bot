@@ -172,6 +172,67 @@ bot.action('show_keys', async (ctx) => {
 });
 
 /**
+ * Portfolio
+ */
+bot.action('portfolio', async (ctx) => {
+  await ctx.answerCbQuery();
+
+  const userId = ctx.from.id;
+  const session = getWalletSession(userId);
+
+  if (!session) {
+    return ctx.reply('⚠️ No wallet found.', getBackButton());
+  }
+
+  await ctx.editMessageText(
+    `📊 <b>Portfolio</b>\n\n` +
+    `Coming soon! This will show:\n` +
+    `• Token holdings & values\n` +
+    `• LP positions\n` +
+    `• Staking rewards\n` +
+    `• Transaction history\n\n` +
+    `For now, use "💰 Check Balance" to see your tokens.`,
+    {
+      parse_mode: 'HTML',
+      ...getBackButton()
+    }
+  );
+});
+
+/**
+ * Faucet
+ */
+bot.action('faucet', async (ctx) => {
+  await ctx.answerCbQuery();
+
+  const userId = ctx.from.id;
+  const session = getWalletSession(userId);
+
+  if (!session) {
+    return ctx.reply('⚠️ No wallet found.', getBackButton());
+  }
+
+  const addressInfo = getAddressInfo(session.address);
+
+  await ctx.editMessageText(
+    `🚰 <b>Testnet Faucet</b>\n\n` +
+    `<b>Get Free Testnet Tokens:</b>\n\n` +
+    `1️⃣ <b>Native tPOT</b> (for gas):\n` +
+    `   Send tPOT to your SS58 address:\n` +
+    `   <code>${addressInfo.ss58Address}</code>\n\n` +
+    `2️⃣ <b>Test Tokens</b> (pUSDT, pDAI, pWBTC, pLINK):\n` +
+    `   Visit: <a href="https://portalswap.live">portalswap.live</a>\n` +
+    `   Connect wallet and use the Faucet tab\n\n` +
+    `💡 <i>Tip: You need tPOT first to pay for minting test tokens!</i>`,
+    {
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      ...getBackButton()
+    }
+  );
+});
+
+/**
  * Help
  */
 bot.action('help', async (ctx) => {
