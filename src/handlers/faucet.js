@@ -140,6 +140,25 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
         const statusMsg = await ctx.reply(`⏳ Minting ${token.amount} ${symbol}...`);
 
         try {
+          // Check if user has enough tPOT for gas
+          const balance = await provider.getBalance(wallet.address);
+          const minBalance = ethers.parseEther("0.01"); // Need at least 0.01 tPOT for gas
+
+          if (balance < minBalance) {
+            return ctx.telegram.editMessageText(
+              ctx.chat.id,
+              statusMsg.message_id,
+              null,
+              `❌ Insufficient tPOT for gas!\n\n` +
+              `Your balance: ${ethers.formatEther(balance)} tPOT\n` +
+              `Minimum needed: 0.01 tPOT\n\n` +
+              `Please claim tPOT from the native faucet first:\n` +
+              `https://faucet.portaldot.io/\n\n` +
+              `Send tPOT to your SS58 address:\n\`${wallet.ss58}\``,
+              { parse_mode: 'Markdown' }
+            );
+          }
+
           // Connect wallet with provider
           const connectedWallet = new ethers.Wallet(wallet.privateKey, provider);
 
@@ -153,14 +172,8 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
           // Parse amount with correct decimals
           const amount = ethers.parseUnits(token.amount, token.decimals);
 
-          // Estimate gas first
-          const gasEstimate = await tokenContract.faucet.estimateGas(wallet.address, amount);
-          const gasLimit = gasEstimate * 120n / 100n; // Add 20% buffer
-
-          // Call faucet function with explicit gas limit
-          const tx = await tokenContract.faucet(wallet.address, amount, {
-            gasLimit: gasLimit,
-          });
+          // Call faucet function (let ethers handle gas estimation)
+          const tx = await tokenContract.faucet(wallet.address, amount);
 
           await ctx.telegram.editMessageText(
             ctx.chat.id,
@@ -278,15 +291,8 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
 
       const value = ethers.parseEther(amount);
 
-      // Estimate gas first
-      const gasEstimate = await faucetContract.donate.estimateGas({ value });
-      const gasLimit = gasEstimate * 120n / 100n; // Add 20% buffer
-
-      // Send donation with explicit gas limit
-      const tx = await faucetContract.donate({
-        value: value,
-        gasLimit: gasLimit,
-      });
+      // Send donation (let ethers handle gas estimation)
+      const tx = await faucetContract.donate({ value });
 
       await ctx.telegram.editMessageText(
         ctx.chat.id,
