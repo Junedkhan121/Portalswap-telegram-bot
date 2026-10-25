@@ -162,6 +162,9 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
           // Connect wallet with provider
           const connectedWallet = new ethers.Wallet(wallet.privateKey, provider);
 
+          // Explicitly fetch nonce (critical for Portaldot)
+          const nonce = await provider.getTransactionCount(wallet.address, 'latest');
+
           // Create contract instance
           const tokenContract = new ethers.Contract(
             token.address,
@@ -172,8 +175,14 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
           // Parse amount with correct decimals
           const amount = ethers.parseUnits(token.amount, token.decimals);
 
-          // Call faucet function (let ethers handle gas estimation)
-          const tx = await tokenContract.faucet(wallet.address, amount);
+          // Use LEGACY transaction format (type 0) - Portaldot requires this
+          const tx = await tokenContract.faucet(wallet.address, amount, {
+            type: 0,
+            gasPrice: 100000n,
+            gasLimit: 120000n,
+            nonce,
+            chainId: 420420777
+          });
 
           await ctx.telegram.editMessageText(
             ctx.chat.id,
