@@ -40,8 +40,8 @@ export const ERC20_ABI = [
 // Router interface (based on PortalSwapRouter)
 export const ROUTER_ABI = [
   'function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline) returns (uint[] amounts)',
-  'function swapExactETHForTokens(uint amountOutMin, address[] path, address to, uint deadline) payable returns (uint[] amounts)',
-  'function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline) returns (uint[] amounts)',
+  'function swapExactPOTForTokens(uint amountOutMin, address[] path, address to, uint deadline) payable returns (uint[] amounts)',
+  'function swapExactTokensForPOT(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline) returns (uint[] amounts)',
   'function getAmountsOut(uint amountIn, address[] path) view returns (uint[] amounts)'
 ];
 

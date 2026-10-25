@@ -224,7 +224,7 @@ export async function handleSwapConfirm(ctx) {
 
     if (swapSession.fromToken.address === 'native') {
       // Swap native tPOT for tokens
-      tx = await router.swapExactETHForTokens(
+      tx = await router.swapExactPOTForTokens(
         amountOutMin,
         swapSession.path,
         session.address,
@@ -237,8 +237,8 @@ export async function handleSwapConfirm(ctx) {
       const approveTx = await tokenContract.approve(CONTRACTS.ROUTER, amountIn);
       await approveTx.wait();
 
-      // Swap tokens for native
-      tx = await router.swapExactTokensForETH(
+      // Swap tokens for native tPOT
+      tx = await router.swapExactTokensForPOT(
         amountIn,
         amountOutMin,
         swapSession.path,
