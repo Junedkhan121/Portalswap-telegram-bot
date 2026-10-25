@@ -88,6 +88,51 @@ Use the Telegram bot's **🗺️ Address Mapper** feature:
 3. Send any EVM address
 4. Get SS58 equivalent + explanation
 
+### How Address Mapping Works
+
+Address mapping converts EVM addresses (0x...) to Substrate SS58 format (5...) using cryptographic encoding. Both addresses represent the **same account** controlled by the **same private key**.
+
+**The Process Explained:**
+
+**Step 1: Extract Raw Bytes**
+Your EVM address is stored as 20 bytes in hexadecimal format:
+```
+EVM: 0xf67cE92096E4E171060B71bF0cca0DA9f9548c03
+Hex: f67cE92096E4E171060B71bF0cca0DA9f9548c03 (40 characters = 20 bytes)
+```
+
+**Step 2: Add Network Prefix**
+Portal uses network prefix `42`, which identifies the Portal blockchain. This prefix is prepended to your address bytes and determines what letter your SS58 address starts with:
+- Prefix 42 → Addresses start with **"5"**
+- Different networks use different prefixes (Polkadot = 0, Kusama = 2, etc.)
+
+**Step 3: Base58 Encoding + Checksum**
+The prefixed bytes are encoded using Base58 (similar to Bitcoin addresses):
+- Uses alphabet: `123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz`
+- Excludes confusing characters: 0, O, I, l
+- Adds checksum for error detection
+- Result: `5Hdtk3kJiQhAdb1oaZXNC8Yi5a8xbcm1GLA5miFsj9J9rqP7`
+
+**Why It Works:**
+```
+Same Private Key
+      ↓
+Same Public Key (20 bytes)
+      ↓
+   ┌──────┴──────┐
+   ↓             ↓
+EVM Format    SS58 Format
+(0x...)       (5...)
+   ↓             ↓
+Same Account, Same Balance
+```
+
+**Key Points:**
+- Conversion is deterministic (same input = same output every time)
+- All Portal addresses start with "5" due to prefix 42
+- No private key needed for conversion (public operation)
+- Works for any EVM address (wallets, contracts, etc.)
+
 ## Verification
 
 All addresses have been verified:
