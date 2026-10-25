@@ -47,11 +47,11 @@ export const ROUTER_ABI = [
 
 // Staking interface (based on PortalSwapStaking)
 export const STAKING_ABI = [
-  'function stake(uint256 amount) returns (bool)',
-  'function unstake(uint256 amount) returns (bool)',
-  'function getStake(address user) view returns (uint256)',
-  'function pendingRewards(address user) view returns (uint256)',
-  'function claimRewards() returns (bool)'
+  'function stake() payable',
+  'function withdraw(uint256 amount)',
+  'function stakedBalance(address user) view returns (uint256)',
+  'function totalStaked() view returns (uint256)',
+  'function contractBalance() view returns (uint256)'
 ];
 
 // WPOT interface

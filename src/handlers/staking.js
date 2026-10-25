@@ -59,16 +59,17 @@ export async function handleStakeInfo(ctx) {
     const provider = getProvider();
     const staking = getStakingContract(provider);
 
-    const staked = await staking.getStake(session.address);
-    const rewards = await staking.pendingRewards(session.address);
+    const staked = await staking.stakedBalance(session.address);
+    const totalStaked = await staking.totalStaked();
 
     const stakedFormatted = formatTokenAmount(staked, 18);
-    const rewardsFormatted = formatTokenAmount(rewards, 18);
+    const totalStakedFormatted = formatTokenAmount(totalStaked, 18);
 
     await ctx.reply(
       `⚡ <b>Your Stake Info</b>\n\n` +
-      `Staked: ${parseFloat(stakedFormatted).toFixed(6)} tPOT\n` +
-      `Pending Rewards: ${parseFloat(rewardsFormatted).toFixed(6)} tPOT\n\n` +
+      `Your Staked: ${parseFloat(stakedFormatted).toFixed(6)} tPOT\n` +
+      `Total Staked: ${parseFloat(totalStakedFormatted).toFixed(2)} tPOT\n\n` +
+      `Note: No rewards in v1. This tracks TVL only.\n\n` +
       `<code>${session.address}</code>`,
       {
         parse_mode: 'HTML',
@@ -184,10 +185,8 @@ export async function handleStakeDepositConfirm(ctx) {
 
     const amount = parseTokenAmount(stakingSession.amount, 18);
 
-    // Note: Staking contract must be approved to spend WPOT or native tokens
-    // Implementation depends on your staking contract design
-
-    const tx = await staking.stake(amount);
+    // Stake by sending native tPOT (no approve needed - it's the native token)
+    const tx = await staking.stake({ value: amount });
     const receipt = await tx.wait();
 
     await ctx.editMessageText(
@@ -238,7 +237,7 @@ export async function handleStakeWithdrawConfirm(ctx) {
 
     const amount = parseTokenAmount(stakingSession.amount, 18);
 
-    const tx = await staking.unstake(amount);
+    const tx = await staking.withdraw(amount);
     const receipt = await tx.wait();
 
     await ctx.editMessageText(
@@ -270,36 +269,16 @@ export async function handleStakeWithdrawConfirm(ctx) {
  * Claim rewards
  */
 export async function handleStakeClaimRewards(ctx) {
-  const userId = ctx.from.id;
-  const session = getWalletSession(userId);
-
-  if (!session) {
-    return ctx.reply('⚠️ No wallet found.', getBackButton());
-  }
-
   await ctx.answerCbQuery();
-  await ctx.reply('⏳ Claiming rewards...');
-
-  try {
-    const provider = getProvider();
-    const signer = getWalletSigner(userId, provider);
-    const staking = getStakingContract(signer);
-
-    const tx = await staking.claimRewards();
-    const receipt = await tx.wait();
-
-    await ctx.reply(
-      `✅ <b>Rewards Claimed!</b>\n\n` +
-      `Tx: <code>${receipt.hash}</code>`,
-      {
-        parse_mode: 'HTML',
-        ...getBackButton()
-      }
-    );
-  } catch (error) {
-    console.error('Claim rewards error:', error);
-    await ctx.reply('❌ Failed to claim rewards.', getBackButton());
-  }
+  await ctx.reply(
+    '⚠️ <b>No Rewards Yet</b>\n\n' +
+    'The staking contract v1 tracks TVL only.\n' +
+    'Rewards will be added in a future update.',
+    {
+      parse_mode: 'HTML',
+      ...getBackButton()
+    }
+  );
 }
 
 // Export for text message handler
