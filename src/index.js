@@ -94,28 +94,6 @@ const requireWallet = async (ctx, next) => {
 // Setup faucet handlers (includes claim tokens & donate)
 setupFaucetHandlers(bot, provider, (userId) => getWalletSession(userId), requireWallet);
 
-// Middleware: Check if wallet exists before allowing actions
-const requireWallet = async (ctx, next) => {
-  const userId = ctx.from.id;
-
-  if (!hasActiveSession(userId)) {
-    await ctx.answerCbQuery('⚠️ Please create or import a wallet first!', { show_alert: true });
-    await ctx.editMessageText(
-      '🔐 <b>Wallet Required</b>\n\n' +
-      'You need to create or import a wallet before using this feature.\n\n' +
-      'Choose an option below to get started:',
-      {
-        parse_mode: 'HTML',
-        ...getInitialMenu()
-      }
-    );
-    return; // Stop execution
-  }
-
-  // Wallet exists, proceed
-  return next();
-};
-
 // Error handling
 bot.catch((err, ctx) => {
   console.error('Bot error:', err);
