@@ -152,8 +152,8 @@ export function setupFaucetHandlers(bot, provider, getWallet) {
               `❌ Insufficient tPOT for gas!\n\n` +
               `Your balance: ${ethers.formatEther(balance)} tPOT\n` +
               `Minimum needed: 0.01 tPOT\n\n` +
-              `Please claim tPOT from the native faucet first:\n` +
-              `https://faucet.portaldot.io/\n\n` +
+              `Please claim tPOT from Portaldot Discord:\n` +
+              `https://discord.gg/portaldot\n\n` +
               `Send tPOT to your SS58 address:\n\`${wallet.ss58}\``,
               { parse_mode: 'Markdown' }
             );
