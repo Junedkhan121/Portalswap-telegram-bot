@@ -352,8 +352,6 @@ bot.on('text', async (ctx) => {
 
   // Check if user is in transfer flow
   if (isInTransferFlow(userId)) {
-    const transferFlow = isInTransferFlow(userId);
-
     // Step 1: Waiting for recipient address
     if (text.startsWith('5')) {
       await handleTransferAddressInput(ctx, text);
@@ -362,12 +360,6 @@ bot.on('text', async (ctx) => {
 
     // Step 2: Waiting for amount
     await handleTransferAmountInput(ctx);
-    return;
-  }
-
-  // Check if user is in address mapping flow
-  if (isInMappingFlow(userId)) {
-    await handleMappingAddressInput(ctx, text);
     return;
   }
 
@@ -380,6 +372,13 @@ bot.on('text', async (ctx) => {
   // Check if user is in staking flow
   if (isInStakingFlow(userId)) {
     await handleStakeAmountInput(ctx);
+    return;
+  }
+
+  // Check if user is in address mapping flow (checked last — mapping session
+  // can persist in memory after user navigates away, so wallet-gated flows take priority)
+  if (isInMappingFlow(userId)) {
+    await handleMappingAddressInput(ctx, text);
     return;
   }
 
