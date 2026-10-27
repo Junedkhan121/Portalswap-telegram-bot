@@ -47,6 +47,20 @@ import {
   handleMappingAddressInput,
   isInMappingFlow
 } from './handlers/mapping.js';
+import {
+  handleWalletManager,
+  handleSwitchWalletMenu,
+  handleActivateWallet,
+  handleRenamePrompt,
+  handleRenameInput,
+  handleDeletePrompt,
+  handleDeleteConfirm,
+  handleImportMethodMenu,
+  handleImportByKeyPrompt,
+  handleImportByMnemonicPrompt,
+  handleImportInput,
+  pendingImportMode,
+} from './handlers/walletManager.js';
 
 // Initialize bot
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -146,37 +160,37 @@ bot.start(async (ctx) => {
  */
 bot.action('wallet_create', async (ctx) => {
   await ctx.answerCbQuery();
-
   const userId = ctx.from.id;
-  const walletInfo = createWallet(userId);
+  const { displayText } = createWallet(userId);
 
-  await ctx.editMessageText(
-    `✅ <b>Wallet Created!</b>\n\n${walletInfo.displayText}`,
-    { parse_mode: 'HTML' }
-  );
+  try {
+    await ctx.editMessageText(displayText, { parse_mode: 'HTML' });
+  } catch {
+    await ctx.reply(displayText, { parse_mode: 'HTML' });
+  }
 
-  // Show main menu after a delay
   setTimeout(async () => {
-    await ctx.reply(
-      '🎉 Setup complete! Here\'s your main menu:',
-      getMainMenu()
-    );
+    await ctx.reply("Here's your main menu:", getMainMenu());
   }, 1000);
 });
 
 /**
- * Import Wallet - Start flow
+ * Import Wallet — now routes through method chooser
  */
-bot.action('wallet_import', async (ctx) => {
-  await ctx.answerCbQuery();
+bot.action('wallet_import', handleImportMethodMenu);
+bot.action('wallet_import_by_key', handleImportByKeyPrompt);
+bot.action('wallet_import_by_mnemonic', handleImportByMnemonicPrompt);
 
-  await ctx.editMessageText(
-    '📥 <b>Import Wallet</b>\n\n' +
-    'Please send your private key (with or without 0x prefix).\n\n' +
-    '⚠️ Only send this in a private chat! Never share your private key publicly.',
-    { parse_mode: 'HTML' }
-  );
-});
+/**
+ * Wallet Manager — multi-wallet: switch, rename, delete
+ */
+bot.action('wallet_manager', handleWalletManager);
+bot.action('wallet_switch', handleSwitchWalletMenu);
+bot.action(/^wallet_activate_(\d+)$/, handleActivateWallet);
+bot.action('wallet_rename', handleRenamePrompt);
+bot.action('wallet_delete_prompt', handleDeletePrompt);
+bot.action(/^wallet_delete_confirm_(\d+)$/, handleDeleteConfirm);
+bot.action('wallet_noop', (ctx) => ctx.answerCbQuery());
 
 /**
  * Main Menu
@@ -227,24 +241,24 @@ bot.action('confirm_transfer', requireWallet, handleTransferConfirm);
 bot.action('address_mapping', handleMappingStart);
 
 /**
- * Show Keys - PROTECTED
+ * Show Keys — moved into Wallet Manager (wallet_manager action).
+ * Kept as a fallback alias so any deep-linked references still work.
  */
 bot.action('show_keys', requireWallet, async (ctx) => {
   const userId = ctx.from.id;
-  const session = getWalletSession(userId);
-
+  const active = getWalletSession(userId); // returns active wallet entry
   await ctx.answerCbQuery();
-
-  const addressInfo = getAddressInfo(session.address);
-
+  const addressInfo = getAddressInfo(active.address);
+  const mnemonicLine = active.mnemonic
+    ? `\n\n📝 <b>Seed Phrase:</b>\n<code>${active.mnemonic}</code>`
+    : '';
   await ctx.reply(
-    addressInfo.displayText + `\n\n` +
-    `🔐 Private Key:\n<code>${session.privateKey}</code>\n\n` +
-    `⚠️ Keep this safe and never share it!`,
-    {
-      parse_mode: 'HTML',
-      ...getBackButton()
-    }
+    `🔑 <b>${active.name}</b>\n\n` +
+    addressInfo.displayText +
+    `\n\n🔐 <b>Private Key:</b>\n<code>${active.privateKey}</code>` +
+    mnemonicLine +
+    `\n\n⚠️ Keep all of the above safe and never share them!`,
+    { parse_mode: 'HTML', ...getBackButton() }
   );
 });
 
@@ -315,8 +329,14 @@ bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
   const text = ctx.message.text.trim();
 
-  // Check if user is importing wallet (no active session + looks like private key)
-  if (!hasActiveSession(userId) && (text.startsWith('0x') || text.length === 64 || text.length === 66)) {
+  // 1. Check pending wallet rename
+  if (await handleRenameInput(ctx, text)) return;
+
+  // 2. Check pending wallet import (key or mnemonic via wallet manager)
+  if (await handleImportInput(ctx, text)) return;
+
+  // 3. Check if user is importing wallet (no active session + looks like private key or mnemonic)
+  if (!hasActiveSession(userId) && (text.startsWith('0x') || text.length === 64 || text.length === 66 || text.split(' ').length >= 12)) {
     const result = importWallet(userId, text);
 
     if (result.success) {
