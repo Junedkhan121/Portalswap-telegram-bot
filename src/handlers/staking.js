@@ -286,3 +286,10 @@ export function isInStakingFlow(userId) {
   const session = stakingSessions.get(userId);
   return session && session.step === 'amount';
 }
+
+/**
+ * Cancel staking flow (called when user starts a different flow)
+ */
+export function cancelStaking(userId) {
+  stakingSessions.delete(userId);
+}

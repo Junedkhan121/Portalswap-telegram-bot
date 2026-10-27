@@ -21,7 +21,8 @@ import {
   handleTokenSelection,
   handleSwapAmountInput,
   handleSwapConfirm,
-  isInSwapFlow
+  isInSwapFlow,
+  cancelSwap
 } from './handlers/swap.js';
 import {
   handleStakeMenu,
@@ -32,21 +33,36 @@ import {
   handleStakeDepositConfirm,
   handleStakeWithdrawConfirm,
   handleStakeClaimRewards,
-  isInStakingFlow
+  isInStakingFlow,
+  cancelStaking
 } from './handlers/staking.js';
 import {
   handleTransferStart,
   handleTransferAddressInput,
   handleTransferAmountInput,
   handleTransferConfirm,
-  isInTransferFlow
+  isInTransferFlow,
+  cancelTransfer
 } from './handlers/transfer.js';
 import { setupFaucetHandlers } from './handlers/faucet.js';
 import {
   handleMappingStart,
   handleMappingAddressInput,
-  isInMappingFlow
+  isInMappingFlow,
+  cancelMapping
 } from './handlers/mapping.js';
+
+/**
+ * Cancel every active flow for a user.
+ * Call this at the start of any action that begins a new flow so the
+ * user always lands cleanly in the flow they just chose.
+ */
+function clearAllFlows(userId) {
+  cancelSwap(userId);
+  cancelStaking(userId);
+  cancelTransfer(userId);
+  cancelMapping(userId);
+}
 import {
   handleWalletManager,
   handleSwitchWalletMenu,
@@ -193,10 +209,11 @@ bot.action(/^wallet_delete_confirm_(\d+)$/, handleDeleteConfirm);
 bot.action('wallet_noop', (ctx) => ctx.answerCbQuery());
 
 /**
- * Main Menu
+ * Main Menu — also clears any stale flows
  */
 bot.action('main_menu', async (ctx) => {
   await ctx.answerCbQuery();
+  clearAllFlows(ctx.from.id);
   await ctx.editMessageText(
     '🏠 <b>Main Menu</b>\n\nSelect an action:',
     {
@@ -209,22 +226,37 @@ bot.action('main_menu', async (ctx) => {
 /**
  * Balance Check - PROTECTED
  */
-bot.action('balance', requireWallet, handleBalance);
+bot.action('balance', requireWallet, async (ctx) => {
+  clearAllFlows(ctx.from.id);
+  return handleBalance(ctx);
+});
 
 /**
  * Swap Flow - PROTECTED
  */
-bot.action('swap', requireWallet, handleSwapStart);
+bot.action('swap', requireWallet, async (ctx) => {
+  clearAllFlows(ctx.from.id);
+  return handleSwapStart(ctx);
+});
 bot.action(/^token_(from|to)_/, requireWallet, handleTokenSelection);
 bot.action('confirm_swap', requireWallet, handleSwapConfirm);
 
 /**
  * Staking Flow - PROTECTED
  */
-bot.action('stake', requireWallet, handleStakeMenu);
+bot.action('stake', requireWallet, async (ctx) => {
+  clearAllFlows(ctx.from.id);
+  return handleStakeMenu(ctx);
+});
 bot.action('stake_info', requireWallet, handleStakeInfo);
-bot.action('stake_deposit', requireWallet, handleStakeDeposit);
-bot.action('stake_withdraw', requireWallet, handleStakeWithdraw);
+bot.action('stake_deposit', requireWallet, async (ctx) => {
+  clearAllFlows(ctx.from.id);
+  return handleStakeDeposit(ctx);
+});
+bot.action('stake_withdraw', requireWallet, async (ctx) => {
+  clearAllFlows(ctx.from.id);
+  return handleStakeWithdraw(ctx);
+});
 bot.action('stake_claim', requireWallet, handleStakeClaimRewards);
 bot.action('confirm_stake_deposit', requireWallet, handleStakeDepositConfirm);
 bot.action('confirm_stake_withdraw', requireWallet, handleStakeWithdrawConfirm);
@@ -232,13 +264,19 @@ bot.action('confirm_stake_withdraw', requireWallet, handleStakeWithdrawConfirm);
 /**
  * Transfer Flow - PROTECTED
  */
-bot.action('transfer', requireWallet, handleTransferStart);
+bot.action('transfer', requireWallet, async (ctx) => {
+  clearAllFlows(ctx.from.id);
+  return handleTransferStart(ctx);
+});
 bot.action('confirm_transfer', requireWallet, handleTransferConfirm);
 
 /**
  * Address Mapping - PUBLIC (can map any address without wallet)
  */
-bot.action('address_mapping', handleMappingStart);
+bot.action('address_mapping', async (ctx) => {
+  clearAllFlows(ctx.from.id);
+  return handleMappingStart(ctx);
+});
 
 /**
  * Show Keys — moved into Wallet Manager (wallet_manager action).

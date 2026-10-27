@@ -319,3 +319,10 @@ export function isInSwapFlow(userId) {
   const session = swapSessions.get(userId);
   return session && session.step === 'enter_amount';
 }
+
+/**
+ * Cancel swap flow (called when user starts a different flow)
+ */
+export function cancelSwap(userId) {
+  swapSessions.delete(userId);
+}

@@ -124,3 +124,10 @@ export function isInMappingFlow(userId) {
   const session = mappingSessions.get(userId);
   return session && session.step === 'enter_address';
 }
+
+/**
+ * Cancel mapping flow (called when user starts a different flow)
+ */
+export function cancelMapping(userId) {
+  mappingSessions.delete(userId);
+}
