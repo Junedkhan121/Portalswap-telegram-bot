@@ -389,15 +389,13 @@ bot.on('text', async (ctx) => {
   }
 
   // Check if user is in transfer flow
-  if (isInTransferFlow(userId)) {
-    // Step 1: Waiting for recipient address
-    if (text.startsWith('5')) {
+  const transferStep = isInTransferFlow(userId);
+  if (transferStep) {
+    if (transferStep === 'awaiting_address') {
       await handleTransferAddressInput(ctx, text);
-      return;
+    } else if (transferStep === 'awaiting_amount') {
+      await handleTransferAmountInput(ctx);
     }
-
-    // Step 2: Waiting for amount
-    await handleTransferAmountInput(ctx);
     return;
   }
 

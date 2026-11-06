@@ -12,10 +12,14 @@ import { u8aToHex } from '@polkadot/util';
 const transferFlows = new Map();
 
 /**
- * Check if user is in transfer flow
+ * Check if user is in transfer flow.
+ * Returns the current step string, or false if not in flow.
+ * @returns {false | 'awaiting_address' | 'awaiting_amount' | 'awaiting_confirm'}
  */
 export function isInTransferFlow(userId) {
-  return transferFlows.has(userId);
+  const flow = transferFlows.get(userId);
+  if (!flow) return false;
+  return flow.step;
 }
 
 /**
